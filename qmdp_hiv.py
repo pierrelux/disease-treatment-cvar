@@ -479,9 +479,9 @@ def plot_qmdp_results(qmdp_results: Dict[float, Dict], neutral_policies, termina
     taus = sorted(qmdp_results.keys())
     n_taus = len(taus)
     
-    # Create custom colormap: gray (delay) to brown/red (start)
+    # Create custom colormap matching thesis: gray=Delay, dark red=Start
     from matplotlib.colors import LinearSegmentedColormap
-    colors = ['#808080', '#8B4513']  # gray to brown
+    colors = ['#A0A0A0', '#8B2323']  # light gray (Delay) to dark red (Start)
     cmap = LinearSegmentedColormap.from_list('thesis', colors)
     
     fig = plt.figure(figsize=(14, 10))
@@ -494,17 +494,15 @@ def plot_qmdp_results(qmdp_results: Dict[float, Dict], neutral_policies, termina
         # Policy at dt=0, Rbin=0
         mat = np.array([p[:, 0, 0] for p in res["policies"]])  # [T, cd4]
         
-        # Flip so high CD4 is at top (like thesis)
-        mat_flip = mat[:, ::-1]
-        
-        im = ax.imshow(mat_flip.T, aspect="auto", cmap=cmap, vmin=0, vmax=1,
-                      extent=[START_AGE, END_AGE, -0.5, 6.5])
+        # Use origin='lower' so row 0 (low CD4) is at bottom, row 6 (high CD4) at top
+        im = ax.imshow(mat.T, aspect="auto", cmap=cmap, vmin=0, vmax=1,
+                      extent=[START_AGE, END_AGE, -0.5, 6.5], origin='lower')
         
         ax.set_xlabel("Age")
         if idx == 0:
             ax.set_ylabel("CD4 Level")
         ax.set_yticks(range(7))
-        ax.set_yticklabels(cd4_names[::-1])
+        ax.set_yticklabels(cd4_names)
         
         label = "Risk Averse" if tau < 0.4 else ("Risk Seeking" if tau > 0.6 else "Less Risk Averse")
         ax.set_title(f"$\\tau = {tau:.2f}$ ({label})")
