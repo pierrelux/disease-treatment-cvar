@@ -112,7 +112,7 @@ The implementation includes consistency checks:
 
 1. **$s^\* \approx \text{VaR}_\alpha$**: The optimal threshold should equal the empirical $\alpha$-quantile
 2. **DP = MC shortfall**: The dynamic programming value $\mathbb{E}[\min(R-s,0)]$ should match Monte Carlo estimates
-3. **Monotonicity**: $\text{CVaR}_{\alpha_1} \leq \text{CVaR}_{\alpha_2}$ for $\alpha_1 < \alpha_2$
+3. **Monotonicity**: $`\mathrm{CVaR}_{\alpha_1} \le \mathrm{CVaR}_{\alpha_2}`$ for $`\alpha_1 < \alpha_2`$
 
 ## Usage
 
