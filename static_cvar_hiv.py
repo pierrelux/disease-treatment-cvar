@@ -59,7 +59,7 @@ CARDIAC_MULT = 2.0
 # Background mortality — WHO Life Tables 2016 (cached) with fallback
 # ==============================================================================
 
-_WHO_BG_CACHE_PATH = Path(__file__).with_name("who_bg_mort_6mo_USA_FMLE_2016.json")
+_WHO_BG_CACHE_PATH = Path(__file__).with_name("who_bg_mort_6mo_USA_FMLE_2016_smooth.json")
 _WHO_BG_CACHE: Optional[Dict[int, float]] = None
 
 def _load_who_cache() -> Optional[Dict[int, float]]:
