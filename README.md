@@ -1,6 +1,9 @@
-# Static CVaR for HIV Treatment Initiation
+# Risk-Sensitive MDPs for HIV Treatment Initiation
 
-This repository implements static (pre-commitment) Conditional Value-at-Risk (CVaR) optimization for a Markov Decision Process modeling HIV treatment initiation. The approach follows Bauerle and Ott (2011) using an augmented state space.
+This repository implements two risk-sensitive optimization approaches for a Markov Decision Process modeling HIV treatment initiation:
+
+1. **Static CVaR** (Bauerle and Ott, 2011): Maximizes Conditional Value-at-Risk using Rockafellar-Uryasev representation
+2. **QMDP** (Li et al., 2022): Maximizes quantiles of cumulative reward via threshold-based DP
 
 ## Problem Setting
 
@@ -114,20 +117,69 @@ The implementation includes consistency checks:
 2. **DP = MC shortfall**: The dynamic programming value $\mathbb{E}[\min(R-s,0)]$ should match Monte Carlo estimates
 3. **Monotonicity**: $`\mathrm{CVaR}_{\alpha_1} \le \mathrm{CVaR}_{\alpha_2}`$ for $`\alpha_1 < \alpha_2`$
 
+## QMDP Formulation
+
+QMDP maximizes the \(\tau\)-quantile of cumulative reward \(R\):
+
+\[
+\max_\pi Q_\tau(R^\pi)
+\]
+
+where \(Q_\tau\) denotes the \(\tau\)-quantile.
+
+### Threshold-Based Algorithm
+
+For threshold \(z\), define the exceedance probability:
+
+\[
+V_t(x, r) = \max_\pi \mathbb{P}(R \geq z \mid X_t = x, \text{cumulative reward} = r)
+\]
+
+The Bellman recursion is:
+
+\[
+V_t(x, r) = \max_{a \in A(x)} \sum_{x'} P(x' \mid x, a) \cdot V_{t+1}(x', r + R(x,a))
+\]
+
+with terminal condition \(V_T(x, r) = \mathbf{1}[r \geq z]\).
+
+The optimal \(\tau\)-quantile is:
+
+\[
+z^* = \max\{z : V_0(x_0, 0) \geq 1 - \tau\}
+\]
+
+### QMDP Results
+
+![QMDP Results](qmdp_results.png)
+
+The figure shows:
+- **Top row**: Policy heatmaps for different \(\tau\) values. Gray = delay ART, brown = start ART.
+  - \(\tau = 0.20\) (risk averse): Delay ART at older ages for high CD4
+  - \(\tau = 0.80\) (risk seeking): Start ART earlier across most states
+- **Bottom**: QMDP achieves higher quantiles (brown) than risk-neutral MDP (gray dashed) for all \(\tau\).
+
 ## Usage
 
 ```bash
 pip install -r requirements.txt
+
+# Static CVaR
 python static_cvar_hiv.py
+
+# QMDP
+python qmdp_hiv.py
 ```
 
 Output:
-- Console: DP values, verification checks
-- File: `cvar_thesis_results.png`
+- `cvar_thesis_results.png`: CVaR policy visualization
+- `qmdp_results.png`: QMDP policy and quantile curve
 
 ## References
 
 - Bauerle N, Ott J (2011). Markov Decision Processes with Average-Value-at-Risk criteria. *Mathematical Methods of Operations Research*, 74(3):361-379.
+
+- Li Y, Zhong M, Marecki M, Makar M, Ghavamzadeh M (2022). Quantile Markov Decision Processes. *AISTATS 2022*.
 
 - Rockafellar RT, Uryasev S (2000). Optimization of Conditional Value-at-Risk. *Journal of Risk*, 2(3):21-42.
 
