@@ -14,7 +14,10 @@ The algorithm uses threshold-based backward DP:
 3. Terminal: V_T(x, r) = 1 if r >= z, else 0
 4. For tau, find z* = max{z : V_0(x_0, 0) >= 1 - tau}
 
-This reproduces the QMDP results from Zhong (2020), Figures 2.10 and 2.11.
+NOTE: The exact parameters from Zhong (2020) Figures 2.10-2.11 are not fully
+available (background mortality from reference [139] is not tabulated). This
+implementation uses WHO Life Tables 2016 as an approximation, which produces
+qualitatively similar but not identical policy patterns.
 
 Reference:
   Li Y, Zhong M, Marecki M, Makar M, Ghavamzadeh M (2022). Quantile Markov
