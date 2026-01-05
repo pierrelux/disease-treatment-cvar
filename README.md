@@ -17,57 +17,57 @@ Once ART is initiated, it continues indefinitely. The objective is to maximize r
 
 ## CVaR Formulation
 
-For a random cumulative reward \(R\), the lower-tail CVaR at level \(\alpha \in (0,1)\) is:
+For a random cumulative reward $R$, the lower-tail CVaR at level $\alpha \in (0,1)$ is:
 
-\[
+$$
 \text{CVaR}_\alpha(R) = \mathbb{E}[R \mid R \leq \text{VaR}_\alpha(R)]
-\]
+$$
 
-where \(\text{VaR}_\alpha(R)\) is the \(\alpha\)-quantile of \(R\).
+where $\text{VaR}_\alpha(R)$ is the $\alpha$-quantile of $R$.
 
 ### Rockafellar-Uryasev Representation
 
 CVaR admits the dual representation (Rockafellar and Uryasev, 2000):
 
-\[
-\text{CVaR}_\alpha(R) = \max_{s \in \mathbb{R}} \left\{ s + \frac{1}{\alpha} \mathbb{E}[\min(R - s, 0)] \right\}
-\]
+$$
+\text{CVaR}_\alpha(R) = \max_{s \in \mathbb{R}} \{ s + \frac{1}{\alpha} \mathbb{E}[\min(R - s, 0)] \}
+$$
 
-The optimal \(s^\*\) satisfies \(s^\* = \text{VaR}_\alpha(R)\).
+The optimal $s^\*$ satisfies $s^\* = \text{VaR}_\alpha(R)$.
 
 ### Augmented State Space (Bauerle and Ott, 2011)
 
 To optimize static CVaR over a multi-period MDP, we augment the state with the cumulative reward. Define:
 
-\[
+$$
 W_t(x, r, s) = \mathbb{E}\left[\min\left(\sum_{\tau=t}^{T} R_\tau + r - s, 0\right) \;\middle|\; X_t = x\right]
-\]
+$$
 
-where \(x\) is the original state (CD4, ART duration), \(r\) is the cumulative reward so far, and \(s\) is the threshold parameter.
+where $x$ is the original state (CD4, ART duration), $r$ is the cumulative reward so far, and $s$ is the threshold parameter.
 
-The Bellman recursion for \(W\) is:
+The Bellman recursion for $W$ is:
 
-\[
+$$
 W_t(x, r, s) = \max_{a \in A(x)} \sum_{x'} P(x' \mid x, a) \cdot W_{t+1}(x', r + R(x,a), s)
-\]
+$$
 
 with terminal condition:
 
-\[
+$$
 W_T(x, r, s) = \min(r - s, 0)
-\]
+$$
 
 The CVaR-optimal policy is obtained by:
-1. For each threshold \(s\) on a grid, solve the augmented DP to get \(W_0(x_0, 0, s)\)
-2. Compute the objective \(\phi(s) = s + \frac{1}{\alpha} W_0(x_0, 0, s)\)
-3. Select \(s^\* = \arg\max_s \phi(s)\)
-4. Return the policy from step 1 evaluated at \(s^\*\)
+1. For each threshold $s$ on a grid, solve the augmented DP to get $W_0(x_0, 0, s)$
+2. Compute the objective $\phi(s) = s + \frac{1}{\alpha} W_0(x_0, 0, s)$
+3. Select $s^\* = \arg\max_s \phi(s)$
+4. Return the policy from step 1 evaluated at $s^\*$
 
 ## Implementation Details
 
 ### Reward Discretization
 
-The cumulative reward \(r\) is discretized into bins. The bin index is computed using rounding (not floor) to avoid systematic underestimation:
+The cumulative reward $r$ is discretized into bins. The bin index is computed using rounding (not floor) to avoid systematic underestimation:
 
 ```python
 bin_index = round(r / bin_width)
@@ -79,20 +79,20 @@ This reduces discretization error from ~60% to ~10% over a 140-step horizon.
 
 If death occurs during a period, the reward for that period is halved (uniform death time assumption):
 
-\[
+$$
 R_{\text{period}} = \begin{cases}
 r & \text{if survive} \\
 r/2 & \text{if die}
 \end{cases}
-\]
+$$
 
 ### Mortality Combination
 
 HIV mortality and background mortality are combined assuming independence:
 
-\[
+$$
 p_{\text{total}} = 1 - (1 - p_{\text{HIV}})(1 - p_{\text{background}})
-\]
+$$
 
 Background mortality uses WHO Life Tables 2016 for US females (cached in `who_bg_mort_6mo_USA_FMLE_2016.json`).
 
@@ -102,7 +102,7 @@ Background mortality uses WHO Life Tables 2016 for US females (cached in `who_bg
 
 The figure shows:
 - **Top row**: Policy heatmaps (green = start ART, red = wait). Risk-neutral and CVaR policies are nearly identical for this initiation problem.
-- **Bottom left**: Rockafellar-Uryasev objective \(\phi(s)\) vs threshold \(s\). The peak occurs at \(s^\* \approx \text{VaR}_\alpha\).
+- **Bottom left**: Rockafellar-Uryasev objective $\phi(s)$ vs threshold $s$. The peak occurs at $s^\* \approx \text{VaR}_\alpha$.
 - **Bottom center**: Cumulative distribution of total QALYs under each policy.
 - **Bottom right**: Summary statistics (mean, VaR, CVaR) for each policy.
 
@@ -110,9 +110,9 @@ The figure shows:
 
 The implementation includes consistency checks:
 
-1. **\(s^\* \approx \text{VaR}_\alpha\)**: The optimal threshold should equal the empirical \(\alpha\)-quantile
-2. **DP = MC shortfall**: The dynamic programming value \(\mathbb{E}[\min(R-s,0)]\) should match Monte Carlo estimates
-3. **Monotonicity**: \(\text{CVaR}_{\alpha_1} \leq \text{CVaR}_{\alpha_2}\) for \(\alpha_1 < \alpha_2\)
+1. **$s^\* \approx \text{VaR}_\alpha$**: The optimal threshold should equal the empirical $\alpha$-quantile
+2. **DP = MC shortfall**: The dynamic programming value $\mathbb{E}[\min(R-s,0)]$ should match Monte Carlo estimates
+3. **Monotonicity**: $\text{CVaR}_{\alpha_1} \leq \text{CVaR}_{\alpha_2}$ for $\alpha_1 < \alpha_2$
 
 ## Usage
 
