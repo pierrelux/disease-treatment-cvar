@@ -14,10 +14,10 @@ The algorithm uses threshold-based backward DP:
 3. Terminal: V_T(x, r) = 1 if r >= z, else 0
 4. For tau, find z* = max{z : V_0(x_0, 0) >= 1 - tau}
 
-NOTE: The exact parameters from Zhong (2020) Figures 2.10-2.11 are not fully
-available (background mortality from reference [139] is not tabulated). This
-implementation uses WHO Life Tables 2016 as an approximation, which produces
-qualitatively similar but not identical policy patterns.
+NOTE: The Zhong (2020) thesis Table A.1 has significantly different HIV mortality
+rates than the original Negoescu et al. (2012) paper (10-30x higher). Using
+Negoescu's original parameters produces policy patterns closer to the thesis
+figures. Set PARAM_SET = "negoescu" or "zhong" to switch between parameter sets.
 
 Reference:
   Li Y, Zhong M, Marecki M, Makar M, Ghavamzadeh M (2022). Quantile Markov
@@ -34,15 +34,31 @@ from pathlib import Path
 import json
 
 # ==============================================================================
-# Import model parameters from static_cvar_hiv.py
+# Model parameters
 # ==============================================================================
 
-# Thesis parameters (Table A.1)
-CD4_MIDPOINTS = np.array([25, 75, 150, 250, 350, 450, 750], dtype=float)
-DEATH_NO_ART = np.array([0.1618, 0.0692, 0.0549, 0.0428, 0.0348, 0.0295, 0.0186, 0.0], dtype=float)
-DEATH_ART = np.array([0.1356, 0.0472, 0.0201, 0.0103, 0.0076, 0.0076, 0.0045, 0.0], dtype=float)
-UTILITY_NO_ART = np.array([0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.0], dtype=float) * 0.5
-UTILITY_ART = np.array([0.72, 0.75, 0.78, 0.81, 0.84, 0.87, 0.90, 0.0], dtype=float) * 0.5
+# Choose parameter set: "negoescu" (original 2012 paper) or "zhong" (thesis Table A.1)
+# The Zhong thesis has 10-30x higher HIV mortality rates than Negoescu 2012,
+# which dramatically changes optimal policies.
+PARAM_SET = "negoescu"  # "negoescu" or "zhong"
+
+if PARAM_SET == "negoescu":
+    # Negoescu et al. 2012 (Clin Infect Dis) - Original parameters
+    # CD4 bins: <50, 50-99, 100-199, 200-349, 350-499, 500-649, >=650, dead
+    CD4_MIDPOINTS = np.array([25, 75, 150, 275, 425, 575, 750], dtype=float)
+    DEATH_NO_ART = np.array([0.1005, 0.02, 0.0108, 0.006, 0.0016, 0.001, 0.0008, 0.0], dtype=float)
+    DEATH_ART = np.array([0.0167, 0.0119, 0.0085, 0.0039, 0.0012, 0.001, 0.0008, 0.0], dtype=float)
+    # Utilities from Zhong thesis (Negoescu doesn't specify per-CD4 utilities)
+    UTILITY_NO_ART = np.array([0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.0], dtype=float) * 0.5
+    UTILITY_ART = np.array([0.72, 0.75, 0.78, 0.81, 0.84, 0.87, 0.90, 0.0], dtype=float) * 0.5
+else:
+    # Zhong thesis Table A.1 parameters (modified from Negoescu)
+    CD4_MIDPOINTS = np.array([25, 75, 150, 250, 350, 450, 750], dtype=float)
+    DEATH_NO_ART = np.array([0.1618, 0.0692, 0.0549, 0.0428, 0.0348, 0.0295, 0.0186, 0.0], dtype=float)
+    DEATH_ART = np.array([0.1356, 0.0472, 0.0201, 0.0103, 0.0076, 0.0076, 0.0045, 0.0], dtype=float)
+    UTILITY_NO_ART = np.array([0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88, 0.0], dtype=float) * 0.5
+    UTILITY_ART = np.array([0.72, 0.75, 0.78, 0.81, 0.84, 0.87, 0.90, 0.0], dtype=float) * 0.5
+
 CD4_DECREASE = 35.25
 CARDIAC_MULT = 2.0
 
