@@ -1,0 +1,680 @@
+HHS Public Access
+Author manuscript
+Author Manuscript
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+Published in final edited form as:
+Oper Res. 2022 ; 70(3): 1428–1447. doi:10.1287/opre.2021.2123.
+
+Quantile Markov Decision Processes
+Xiaocheng Li,
+Department of Management Science and Engineering, Stanford University, Stanford, CA, 94305
+Huaiyang Zhong,
+Department of Management Science and Engineering, Stanford University, Stanford, CA, 94305
+
+Author Manuscript
+
+Margaret L. Brandeau
+Department of Management Science and Engineering, Stanford University, Stanford, CA, 94305
+
+Abstract
+
+Author Manuscript
+
+The goal of a traditional Markov decision process (MDP) is to maximize expected cumulative
+reward over a defined horizon (possibly infinite). In many applications, however, a decision
+maker may be interested in optimizing a specific quantile of the cumulative reward instead
+of its expectation. In this paper we consider the problem of optimizing the quantiles of the
+cumulative rewards of a Markov decision process (MDP), which we refer to as a quantile Markov
+decision process (QMDP). We provide analytical results characterizing the optimal QMDP value
+function and present a dynamic programming-based algorithm to solve for the optimal policy. The
+algorithm also extends to the MDP problem with a conditional value-at-risk (CVaR) objective.
+We illustrate the practical relevance of our model by evaluating it on an HIV treatment initiation
+problem, where patients aim to balance the potential benefits and risks of the treatment.
+
+Keywords
+Markov Decision Process; Dynamic Programming; Quantile; Risk Measure; Medical Decision
+Making
+
+1.
+
+Introduction
+
+Author Manuscript
+
+The problem of sequential decision making has been widely studied in the fields of
+operations research, management science, artificial intelligence, and stochastic control.
+Markov decision processes (MDPs) are one important framework for addressing such
+problems. In the traditional MDP setting, an agent sequentially performs actions based on
+information about the current state and then obtains rewards based on the action and state.
+The goal of an MDP is to maximize the expected cumulative reward over a defined horizon
+which may be finite or infinite.
+In many applications, however, a decision maker may be interested in optimizing a specific
+quantile of the cumulative reward instead of its expectation. For example, a physician may
+want to determine the optimal drug regime for a risk-averse patient with the objective of
+
+chengli1@stanford.edu .
+
+Li et al.
+
+Page 2
+
+Author Manuscript
+
+maximizing the 0.10 quantile of the cumulative reward; this is the cumulative improvement
+in health that is expected to occur with at least 90% probability for the patient (Beyerlein
+2014). A company such as Amazon that provides cloud computing services might want their
+cloud service to be optimized at the 0.01 quantile (DeCandia et al. 2007), meaning that
+the company strives to provide service that satisfies 99% of its customers. In the finance
+industry, the quantile measure, sometimes referred as value at risk (VaR), has been used as
+a measure of capital adequacy (Duffie and Pan 1997). For example, the 1996 Market Risk
+Amendment to the Basel Accord officially used VaR for determining the market risk capital
+requirement (Berkowitz and O’Brien 2002). The advantage of a quantile objective lies in its
+focus on the distribution of rewards. The cumulative reward usually cannot be characterized
+by the expectation alone; distributions of cumulative reward with the same expectation may
+differ greatly in their lower or upper quantiles, especially when they are skewed.
+
+Author Manuscript
+
+In this paper, we study the problem of optimizing quantiles of cumulative rewards of
+a Markov decision process, which we refer to as a quantile Markov decision process
+(QMDP). Our QMDP formulation considers a quantile objective for an underlying MDP
+with finite states and actions, and with either a finite or infinite horizon. We show that
+the key to solving the optimal policy for a QMDP problem is proper augmentation of the
+state space. The augmented state acts as a performance measure of the past cumulative
+reward and thus “Markovizes” the optimal decisions. This enables us to develop an efficient
+dynamic programming procedure that finds the optimal QMDP value function for all states
+and quantiles in one pass. In the execution of the optimal policy, the augmented state
+guides the strategy in subsequent periods to be aggressive, neutral, or conservative. We also
+demonstrate how the same idea extends to the conditional value at risk (CVaR) objective.
+
+Author Manuscript
+
+1.1.
+
+Main Contributions
+In this section we describe the contribution of our work in three areas: model formulation
+(as a risk-sensitive MDP), solution methodology (the design of a dynamic programming
+algorithm to handle a non-Markovian objective), and practical application.
+Risk-sensitive MDP.—There are two types of uncertainty associated with an MDP:
+inherent uncertainty, which is the variability of cumulative cost/reward caused by the
+stochasticity of the MDP itself, and model uncertainty, which is the uncertainty caused
+by unavoidable model ambiguity or parameter estimation errors (Delage and Mannor 2010,
+Wiesemann et al. 2013). The QMDP model aims to explicitly characterize the inherent
+uncertainty of an MDP by looking at the quantiles and the distribution of the cumulative
+reward.
+
+Author Manuscript
+
+The study of risk-sensitive MDPs dates back to Howard and Matheson (1972) who proposed
+the use of an exponential utility function to capture risk attitude. The authors developed a
+policy iteration algorithm that relies on the structure of the exponential function to solve for
+the optimal policy. Subsequently, Piunovskiy (2006), Tamar et al. (2012), and Mannor and
+Tsitsiklis (2011) imposed a variance constraint, and Altman (1999) and Ermon et al. (2012)
+added a probabilistic constraint on the MDP cumulative reward. The variance or probability
+constraint characterizes the variation of the cumulative reward and is introduced to control
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+Li et al.
+
+Page 3
+
+Author Manuscript
+
+the internal risk of MDP. Di Castro et al. (2012) derived policy gradient algorithms for
+variance-related risk criteria and Arlotto et al. (2014) identified types of MDP problems
+where the mean of the cumulative reward dominates its variance. Chow (2017) noted that the
+optimal policy for such models is usually very sensitive to the choice of the risk parameter
+value and to misspecification of the underlying probability distribution.
+
+Author Manuscript
+
+Another stream of research on risk-sensitive MDPs employs risk measures that account
+for the variation of the cumulative reward. Ruszczyński (2010) and Jiang and Powell
+(2018) proposed nested risk measures for a risk-averse MDP problem. The nested objective
+inductively summarizes the cost-to-go reward at each time step into a deterministic value;
+thus the problem can be solved by a dynamic programming procedure similar to that for a
+traditional MDP. One shortcoming of the nested risk measure is that there is no clear relation
+between the cumulative reward and the optimal nested objective function value. Moreover,
+the nested risk measure involves a user-specified parameter. We will further elaborate on the
+difference between QMDP and nested risk measure models through an example in Section
+3.4.
+The risk-sensitive MDP models described in this section solve the optimal policy for only
+one risk parameter at a time. Consequently, they require prior knowledge to specify the risk
+parameter; if, after obtaining the optimal policy for a given parameter value, the reward is
+not satisfactory, one has to solve the model again with another parameter value, essentially
+using a trial-and-error procedure. In contrast, QMDP outputs the optimally achievable
+quantile of the cumulative reward for all quantiles (the risk parameter in the QMDP model)
+in a single run of dynamic programming.
+
+Author Manuscript
+Author Manuscript
+
+Dynamic programming for a non-Markovian objective.—The main difficulty in
+solving risk-sensitive MDP models is the design of an efficient dynamic programming
+algorithm. Nested risk measure models (Ruszczyński 2010, Jiang and Powell 2018)
+compose a sequence of one-step risk measures. Since the optimal action in each period
+depends only on the current state, these models avoid the inconvenience of dealing with nonMarkovian structures. Certain model structures can be utilized for algorithm design, such as
+the dual-based dynamic programming approach for the multistage stochastic programming
+problem (Shapiro et al. 2013). For MDP with the CVaR objective, a number of studies
+(Bauerle and Ott 2011, Yu et al. 2017, Chow and Ghavamzadeh 2014, Chow et al. 2015)
+have each solved the problem under slightly different settings. A common technique
+employed in these papers is augmentation of the state space and execution of a dynamic
+programming algorithm in the augmented state space; however, the augmentation methods
+are restricted to the CVaR objective and cannot be generalized to handle the quantile
+objective.
+QMDP deals with a non-Markovian objective where the optimal policy may depend on the
+entire past history. Our solution algorithm provides a state-augmentation method to handle
+the non-Markovian objective and complements the literature on dynamic programming
+algorithms. The augmented state for the quantile objective acts like a “sufficient statistic” for
+the past history. The dynamic programming algorithm is executed over the augmented state
+space with an optimization subroutine. Compared to the augmented state in the CVaR MDP,
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+Li et al.
+
+Page 4
+
+Author Manuscript
+
+our augmented variable conveys a tangible meaning – quantile – whereas the augmented
+state in Bauerle and Ott (2011) and Yu et al. (2017) is only a nominal variable to facilitate
+the solving of the optimization problem. The QMDP cost-to-go function at each time period
+is a function of the current state and the augmented state (quantile), and represents the
+optimal value function of a QMDP subproblem for the remaining periods (given the current
+state and for all quantiles), in contrast to the nested risk measure formulation (Ruszczyński
+2010, Jiang and Powell 2018) where the cost-to-go function is simply a deterministic value.
+This special property of the augmented state enables us to solve QMDP for the optimal
+value function and the optimal policy for all quantiles in one pass of dynamic programming.
+The other formulations can only solve one risk parameter at a time, and the CVaR MDP
+algorithms proposed by Bauerle and Ott (2011) and Yu et al. (2017) could possibly require
+solving dynamic programming procedures infinitely many times to obtain the optimal value
+function and policy for a single percentile parameter.
+
+Author Manuscript
+
+The dynamic programming results from QMDP also provide insights for understanding
+a dynamic quantile risk measure and give a non-constructive explanation for the timeinconsistency (Cheridito and Stadje 2009) of the quantile risk measure. A quantile objective
+specifies a family of risk measures. The execution of the QMDP solution procedure entails
+a dynamic change of the risk measure within the family. This makes the conventional
+definition of dynamic risk measure unsuitable for the quantile objective. In Section 5.2, we
+discuss this issue in detail and develop a new notion of time-consistent risk measure.
+
+Author Manuscript
+
+Practical Relevance of QMDP.—MDP models have been widely applied to many realworld problems including, for example, financial derivative pricing (Tsitsiklis and van Roy
+1999), service system planning (Sennott 1989), and chronic disease treatment (Shechter
+et al. 2008, Mason et al. 2014). However, these applications do not consider the fact that
+many decisions are inherently risk-sensitive. For instance, both physicians and patients are
+concerned about the risk associated with different medical treatment decisions. Practitioners
+have applied the quantile objective in a variety of applications, but in a descriptive manner
+(Berkowitz and O’Brien 2002, Austin et al. 2005, Beyerlein 2014). Our work contributes
+to the adoption of quantile criteria in sequential decision making. In prior work there has
+been no clear solution to decode the full distribution of cumulative reward. With a single
+pass of the QMDP solution algorithm, we can obtain the optimal rewards for all quantiles.
+Comparing these rewards to the quantiles of the cumulative reward under the traditional
+optimal MDP policy can help assess the need for adoption of a risk-sensitive framework. In
+this sense, QMDP is not a substitute for but a complement to MDP models in real-world
+applications.
+
+Author Manuscript
+
+1.2.
+
+Other Related Literature
+To the best of our knowledge, this paper is the first to address the MDP problem with a
+quantile objective in a generic setting. Several studies have examined restricted versions
+of the problem. Filar et al. (1995) studied the quantile objective for the limiting average
+reward of an infinite-horizon MDP, determining whether there exists a policy that achieves
+a specified value of the long-run limiting average reward at a specified probability level.
+Ummels and Baier (2013) developed an algorithm to compute the quantile cumulative
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+Li et al.
+
+Page 5
+
+Author Manuscript
+
+rewards for a given policy in polynomial time. The algorithm is descriptive rather than
+prescriptive in terms of understanding the uncertainty associated with the Markov chain
+(MDP with a fixed policy). Gilbert et al. (2016) addressed the quantile MDP problem for the
+special case of deterministic rewards and preference-based MDP.
+
+Author Manuscript
+
+CVaR, also known as average value at risk (AVaR) or expected shortfall, has been explored
+in the context of risk-sensitive MDPs. CVaR is defined as the expectation of the cost/reward
+in the worst q% of cases. From the perspective of chance constrained optimization, the
+CVaR criterion can be viewed as a convex relaxation of the quantile criterion and thus
+can be optimized more conveniently (Nemirovski and Shapiro 2007). Bauerle and Ott
+(2011) utilized a variational representation of the CVaR criteria and derived an analytical
+framework for solving MDP with a CVaR objective. The variational form expresses the
+optimal value of CVaR MDP as an optimization of a univariate function on the real line. The
+function value at each real number must be computed by executing a dynamic programming
+procedure in the same way as for a traditional MDP. Yu et al. (2017) studied MDP under
+a more general class of risk measures that have similar variational form. The algorithms in
+Bauerle and Ott (2011) and Yu et al. (2017) optimize a function via grid search and employ
+a dynamic programming subroutine for the underlying MDP and thus offer no complexity
+guarantee and only solve for a single percentile each time. In contrast, QMDP solves for all
+the quantiles in a single pass of dynamic programming.
+
+Author Manuscript
+
+Recent work has explored the interaction of the CVaR objective with MDP. Carpin et al.
+(2016) studied the CVaR objective for the total cost/reward of transient MDPs. Chow and
+Ghavamzadeh (2014) considered MDP with an expectation objective and a CVaR constraint.
+Chow et al. (2015) considered the CVaR objective for the cumulative reward, which is
+close to the quantile objective in this paper, but only considered infinite-horizon discounted
+MDPs. In this paper, we show that the derivation of our QMDP model naturally extends
+to CVaR MDP, and we provide an exact algorithm for solving the CVaR MDP problem
+(including for the case of a finite horizon and an undiscounted setting not considered by
+Chow et al. (2015)).
+
+Author Manuscript
+
+Finally, in the area of reinforcement learning Bellemare et al. (2017) proposed a
+distributional perspective and derived a method that outputs the distribution, rather than
+just the expectation, of the optimal cumulative reward. The optimal policy was defined as
+maximizing the expectation of the cumulative reward. Their method provides additional
+insights regarding the distribution of the optimal reward. Subsequent studies (Dabney et al.
+2018, Yang et al. 2019) examined different ways to parameterize and learn the distributional
+value function. These studies, though still adopting expectation as the optimality criterion,
+shed light on the importance of the distributional information in a sequential decision
+making context.
+1.3.
+
+Illustration of the QMDP Output
+The method presented in this paper computes the QMDP optimal value function and optimal
+policy for all quantiles with a single pass of dynamic programming. Figure 1 shows the
+QMDP optimal value function for three different underlying MDPs that share the same
+state and action space but have different reward functions and transition probabilities (this
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+Li et al.
+
+Page 6
+
+Author Manuscript
+
+example is worked out in Section 6.1). Each point on the red solid curve indicates the
+optimally achievable quantile level for the cumulative reward. The gray dashed curve
+shows the empirical cumulative density function (CDF) of the cumulative reward under
+the traditional MDP optimal policy that maximizes the expected reward.
+The QMDP optimal value function captures the distributional information of the cumulative
+reward. For nested risk measure or utility function formulations the value function could be
+a complicated nonlinear transformation of the cumulative reward; if we want to know the
+distribution of the cumulative reward, simulation of each policy is necessary (in the same
+way that the empirical CDF is obtained for the traditional MDP). Additionally, risk-sensitive
+MDP models usually involve a trade-off procedure between risk and reward, which entails
+solving models for multiple parameters. For QMDP the optimal value function can be
+computed for all parameters at once.
+
+Author Manuscript
+
+The QMDP model output provides a risk assessment for the underlying MDP problem. The
+three MDP problems in Figure 1 have different patterns of inherent risk. For the example
+in the middle panel, if a quantile reward is desired, there is an opportunity for significant
+improvement for quantiles below the median. In this case, a risk-sensitive MDP model might
+be desirable for a risk-averse decision maker. For the example in the left panel, the only
+significant difference occurs at the lowest quantiles. In this case the optimal policy under the
+traditional MDP, although not necessarily achieving quantile optimality, is quite stable and
+robust. In this way, QMDP can be used to determine whether a risk-sensitive MDP model is
+desirable and what kind of improvement one would expect if adopting a risk-sensitive MDP.
+
+Author Manuscript
+
+The remainder of this paper is organized as follows. We lay out the traditional MDP problem
+formulation and assumptions in Section 2 and present the QMDP problem formulation and
+dynamic programming solution in Section 3. We describe the algorithm for solving QMDP
+as well as its computational aspects in Section 4. We discuss extensions of the model
+in Section 5. We present empirical results on a synthetic example as well as on an HIV
+treatment initiation problem in Section 6. We conclude with discussion in Section 7.
+
+2.
+
+Markov Decision Process
+A Markov decision process (MDP) consists of two parts (Bertsekas 1995): an underlying
+discrete-time dynamic system, and a reward function that is additive over time. A dynamic
+system defines the evolution of the state over time:
+St + 1 = ft St, at, wt , t = 0, 1, …, T − 1,
+
+Author Manuscript
+
+where St denotes the state variable at time t from state space S, at denotes the actions/
+decisions at time t and wt is a random variable that captures the stochasticity in the
+system. The reward function at time t, denoted by rt(St, at, wt), accumulates over time.
+The cumulative reward is
+rT ST +
+
+T −1
+
+∑ rt St, at, wt ,
+
+t=0
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+(1)
+
+Li et al.
+
+Page 7
+
+Author Manuscript
+
+where rT(ST) is the terminal reward at the end of the process. The random variable wt ∈ W
+determines the transition in the state space and the state St+1 follows a distribution Pt(·|St,
+at) that is possibly dependent on the state St and the action at. We consider the class of
+policies that consist of a sequence of functions π = {μ0, …, μT−1} where μt maps historical
+information ℋt = S0, a0, …, St − 1, at − 1, St to an admissible action at ∈ At ⊂ A. Here we use
+At and A to denote the admissible action set. The policy π together with the function ft
+
+determines the dynamics of the process. Given an initial state S0 and a policy π, we have the
+following expected total reward:
+Eπ rT ST +
+
+T −1
+
+∑ rt St, at, wt .
+
+t=0
+
+Author Manuscript
+
+The objective of an MDP is to choose an optimal policy in the set Π of all admissible
+policies that maximizes the expected total reward, i.e.
+T −1
+
+max Eπ rT ST + ∑ rt St, at, wt ,
+
+π∈Π
+
+(2)
+
+t=0
+
+where the expectation is taken with respect to (w0, w1, …, wT−1). Without loss of generality,
+we assume rT (ST) = 0 for all ST.
+2.1.
+
+Assumptions
+We first discuss a few assumptions and clarify the scope of this paper.
+
+Author Manuscript
+
+Assumption 1 (State and Action Space).
+
+(a) The state space S and the action space A are finite.
+(b) The random variable wt ∈ W has a finite support, i.e. W < ∞.
+(c) The function ft is “weakly invertibile”: S × A × W
+system (1).
+Specifically, there exists a function lt : S × A × S
+
+S governs the dynamic
+
+W such that for any s ∈ S, a ∈ A and
+
+w ∈ W,
+lt s, a, ft(s, a, w) = w .
+
+Author Manuscript
+
+Part (a) is a classic assumption about the finiteness of the state and action spaces. In
+part (b), we assume that the random variable wt has a finite support, i.e. wt is a discrete
+random variable only taking finite possible values. This paper concerns the quantiles of
+cumulative reward; if wt has infinite support, it will result in the reward rt (St, at, wt) and
+the cumulative reward having infinite support. In fact, there is no general way to store the
+infinite support random variable or to query its quantiles unless the distribution has some
+parameterized structure. Since we aim for a generic treatment of the quantile MDP problem,
+the assumption of finite support is necessary. Also, because a random variable can be always
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+Li et al.
+
+Page 8
+
+Author Manuscript
+
+approximated by a finitely supported discrete random variable at any granularity, we believe
+part (b) will not cause much practical limitation.
+Part (c) is introduced for notational simplicity in our derivation. We show how to remove
+this assumption in Appendix A. Part (c) states that the random variable wt can be fully
+recovered with the knowledge of St, at, and St+1, i.e. there exists a function lt s.t. wt = lt (St,
+at, St+1). This assumption means that there is no additional randomness other than that which
+governs the state transitions. It follows that the reward rt will be a function of St, at, and
+St+1. In practice, this assumption is well satisfied by most MDP applications. Additionally,
+we allow the dynamics ft(·) in part (c) and the reward function rt(·) to be non-stationary and
+non-parametric.
+
+3.
+
+Quantile Markov Decision Process
+
+Author Manuscript
+
+In this section, we formulate the QMDP problem and derive our main result – a dynamic
+programming procedure to solve QMDP. All proofs are provided in Appendix B.
+3.1.
+
+Quantile Objective and Assumptions
+The quantile of a random variable is defined as follows.
+Definition 1. For τ ∈ (0, 1), the τ-quantile of a random variable X is defined as
+Qτ (X) ≜ inf x ∣ ℙ(X ≤ x) ≥ τ .
+
+For τ = 0, 1 we define Q0(X) = inf{X} and Q1(X) = sup{X}, respectively.1
+
+Author Manuscript
+
+The following properties are implied by the definition.
+Lemma 1. For a given random variable X, Qτ(X) is a left continuous and non-decreasing
+function of τ. Additionally,
+ℙ X ≤ Qτ (X) ≥ τ .
+
+The goal of the QMDP is to maximize the τ-quantile of the total reward:
+T −1
+
+max Qτπ ∑ rt St, at, wt .
+
+π∈Π
+
+(3)
+
+t=0
+
+Author Manuscript
+
+Here the quantile is taken with respect to the random variables (w0, w1, …, wT−1), and the
+superscript π denotes the policy we choose. The above formulation is for the case of a fixed
+finite horizon, i.e. T < ∞. For the infinite-horizon case, the objective is
+
+1Here we do not consider the effect of 0-measure set. More precisely, the definition should be
+Q0(X) = sup D ∈ ℝ ∣ P (X ≥ D) = 1 and Q1(X) = inf U ∈ ℝ ∣ P (X ≤ U) = 1 .
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+Li et al.
+
+Page 9
+
+Author Manuscript
+
+∞
+
+max Qτπ ∑ γ trt St, at, wt ,
+
+π∈Π
+
+(4)
+
+t=0
+
+where γ ∈ (0, 1) is the discount factor.
+As in the derivation of MDP with expectation objective, we introduce a value function for
+the quantile reward of the Markov decision process. Suppose that the process initiates in
+state s at time t, and we adopt the policy πt:T. The value function is
+π
+vt t: T (s, τ) ≜ Qτ
+
+T −1
+
+∑ rk Sk, ak, wk ∣ St = s .
+
+k=t
+
+Author Manuscript
+
+Here πt:T = (μt, …, μT−1) denotes the policy and the action
+ak = μk ℋ′k = μk St, at, …, Sk
+
+for k = t, …, T − 1. Since the process initiates at time t, the history ℋ′k also begins with
+
+St. We emphasize that the value function is a function of both the state s and the quantile
+of interest τ and is indexed by time t. The value function also depends on the chosen policy
+πt:T.
+π :T
+
+The objective of QMDP is to maximize the value vt t (s, τ) by optimizing the policy πt:T.
+Thus, we define the optimal value function as
+
+Author Manuscript
+
+vt(s, τ) ≜
+
+π
+
+max vt t: T (s, τ) .
+
+πt: T ∈ Π
+
+(5)
+
+When t = 0, the value function v0(s, τ) is equal to the optimal value in (3).
+3.2.
+
+Value Function and Dynamic Programming
+We construct a dynamic programming procedure and derive the optimal value function vt(s,
+τ) backward from t = T − 1 to t = 0. The key step is to relate the value functions vt(s,
+τ) with vt+1(s, τ). Intuitively, vt+1(s, τ) is obtained by optimizing π(t+1):T while vt(s, τ) is
+obtained by optimizing πt:T. The difference lies in the choice of πt = μt(·). To connect them,
+we introduce an intermediate value function by fixing the output action of μt(s) to be a:
+
+Author Manuscript
+
+vt(s, τ, a) ≜
+
+π :T
+max
+vt t (s, τ) .
+πt: T ∈ Π ∣ μt(s) = a
+
+Note that
+vt(s, τ) = maxvt(s, τ, a) .
+a
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+(6)
+
+Li et al.
+
+Page 10
+
+Author Manuscript
+
+We now establish the relationship between vt(s, τ, a) and the value function vt+1(s′, τ′). We
+have
+vt(s, τ, a) =
+=
+
+π
+
+max
+
+πt: T ∈ Π ∣ μt(s) = a
+
+max
+
+πt: T ∈ Π ∣ μt(s) = a
+T −1
+
+Qτ
+
+vt t: T (s, τ)
+
+∑ 1 St + 1 = s′ ∣ St = s, at = a
+
+(7)
+
+s′ ∈ S
+
+∑ rk Sk, ak, wk ∣ St = s, St + 1 = s′ .
+
+k=t
+
+Here the second line is obtained by differentiating possible values for the state St+1. It is
+a summation of S random variables, each of which is associated with a specific state s′.
+Analyzing each term more carefully, we have,
+
+Author Manuscript
+
+1 St + 1 = s′ ∣ St = s, at = a
+
+T −1
+
+∑ rk Sk, ak, wk ∣ St = s, St + 1 = s′
+
+k=t
+
+= 1 St + 1 = s′ ∣ St = s, at = a rt St, at, wt + 1 St + 1 = s′ ∣ St = s, at = a
+T −1
+
+∑
+
+k=t+1
+
+rk Sk, ak, wk ∣ St = s, St + 1 = s′ .
+
+Author Manuscript
+
+The first term here is deterministic with the knowledge of St and St+1 under Assumption 1
+(c). The second term seems to be closely related to the value function vt+1(s′, τ′) in that the
+summation begins from t+1 and the conditional part includes the information of St+1. The
+following theorem formally establishes the relationship between vt(s, τ, a) and vt+1(s′, τ′).
+Theorem 1 (Value Function Dynamic Programming). Let S = s1, …, sn . Solving the
+
+value function defined in (5) is equivalent to solving the following optimization problem:
+OP T s, τ, a, vt + 1( ⋅ , ⋅ ) ≜ max
+= max
+
+min
+
+q i ∈ qi ≠ 1 ∣ i = 1, 2, …, n
+
+min
+vt + 1 si, qi + rt s, a, wt
+q i ∈ qi ≠ 1 ∣ i = 1, 2, …, n
+vt + 1 si, qi + rt s, a, lt s, a, si ,
+
+,
+
+n
+subject to ∑ piqi ≤ τ, qi ∈ [0, 1], pi = ℙ St + 1 = si ∣ St = s, at = a .
+i=1
+
+Author Manuscript
+
+Here wt = lt(s, a, st+1) = lt(s, a, si) is from Assumption 1 (c). We use vt+1(·,·) to denote
+the value function at t + 1 and to emphasize that it is a function of state and quantile. The
+decision variable here is the vector q. Then,
+vt(s, τ, a) = OP T s, τ, a, vt + 1( ⋅ , ⋅ ) .
+
+Oper Res. Author manuscript; available in PMC 2023 May 01.
+
+(8)
+
+

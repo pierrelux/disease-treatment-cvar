@@ -151,13 +151,20 @@ z^* = \max\{z : V_0(x_0, 0) \geq 1 - \tau\}
 
 ### QMDP Results
 
+The implementation reproduces the results from Zhong (2020), Figures 2.10 and 2.11.
+
 ![QMDP Results](qmdp_results.png)
 
 The figure shows:
-- **Top row**: Policy heatmaps for different \(\tau\) values. Gray = delay ART, brown = start ART.
-  - \(\tau = 0.20\) (risk averse): Delay ART at older ages for high CD4
-  - \(\tau = 0.80\) (risk seeking): Start ART earlier across most states
-- **Bottom**: QMDP achieves higher quantiles (brown) than risk-neutral MDP (gray dashed) for all \(\tau\).
+- **Top row**: Policy heatmaps for different \(\tau\) values. Dark red = delay ART, light green = start ART.
+  - \(\tau = 0.20\) (risk averse): Delay ART at younger ages for high CD4 to avoid cardiac risk.
+  - \(\tau = 0.80\) (risk seeking): Start ART earlier across most states.
+- **Bottom**: Cumulative distribution of returns. QMDP achieves higher quantiles (brown) than the risk-neutral MDP policy (gray dashed).
+
+To ensure high fidelity with the thesis results:
+1. **Long Horizon**: Simulation and DP extend to age 110 to eliminate artificial discontinuities at the terminal age.
+2. **Linear Interpolation**: The augmented state DP uses linear interpolation over the reward grid to minimize discretization bias.
+3. **Smoothed Mortality**: WHO Life Tables 2016 are smoothed and extrapolated for ages 85+ to maintain realistic late-life dynamics.
 
 ## Usage
 
